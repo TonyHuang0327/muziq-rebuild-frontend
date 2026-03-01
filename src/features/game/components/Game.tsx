@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, Box, Typography, CircularProgress, Alert } from '@mui/material'
-import { usePlaylistQuery } from '../queries/usePlaylistQuery'
+import { usePlaylistQuery } from '../queries'
 import type { Track } from '../../../types/playlist'
 
 /** 隨機洗牌陣列 */
