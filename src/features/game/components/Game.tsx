@@ -1,10 +1,19 @@
-import { Box, Button, Typography, CircularProgress, Alert, LinearProgress } from '@mui/material'
-import { usePlaylistQuery } from '../queries'
-import { useGameSession } from '../hooks/useGameSession'
+import {
+  Box,
+  Button,
+  Typography,
+  CircularProgress,
+  Alert,
+  LinearProgress,
+} from "@mui/material";
+import { usePlaylistQuery } from "../queries";
+import { useGameSession } from "../hooks/useGameSession";
 
 export const Game = () => {
-  const { data, isLoading, error, refetch } = usePlaylistQuery({ enabled: false })
-  const tracks = data?.tracks ?? []
+  const { data, isLoading, error, refetch } = usePlaylistQuery({
+    enabled: false,
+  });
+  const tracks = data?.tracks ?? [];
   const {
     score,
     questionIndex,
@@ -15,49 +24,49 @@ export const Game = () => {
     handleSelect,
     handleNext,
     resetGame,
-  } = useGameSession(tracks)
+  } = useGameSession();
 
   const handleStart = async () => {
     if (data?.tracks?.length) {
-      startGame()
-      return
+      startGame(tracks);
+      return;
     }
-    const result = await refetch()
+    const result = await refetch();
     if (result.data?.tracks?.length) {
-      startGame()
+      startGame(result.data.tracks);
     }
-  }
+  };
 
   const isCorrect = (option: string) => {
-    if (!question || !selected) return false
-    return option === question.correct.title
-  }
+    if (!question || !selected) return false;
+    return option === question.correct.title;
+  };
 
   const isWrong = (option: string) => {
-    if (!selected || !question) return false
-    return selected === option && option !== question.correct.title
-  }
+    if (!selected || !question) return false;
+    return selected === option && option !== question.correct.title;
+  };
 
   // 進度：已作答題數 / 10 * 100；選答後該題算作答完
   const progressValue = isGameOver
     ? 100
-    : ((questionIndex + (selected ? 1 : 0)) / 10) * 100
+    : ((questionIndex + (selected ? 1 : 0)) / 10) * 100;
 
-  const isNotStarted = !question && !isGameOver && !isLoading
-  const showScoreAndProgress = !isNotStarted
+  const isNotStarted = !question && !isGameOver && !isLoading;
+  const showScoreAndProgress = !isNotStarted;
 
   return (
     <Box
       sx={{
         maxWidth: 480,
-        mx: 'auto',
+        mx: "auto",
         p: 3,
         borderRadius: 2,
-        bgcolor: 'secondary.main',
-        color: 'white',
+        bgcolor: "secondary.main",
+        color: "white",
       }}
     >
-      <Typography variant="h5" sx={{ mb: 1, color: 'primary.main' }}>
+      <Typography variant="h5" sx={{ mb: 1, color: "primary.main" }}>
         猜歌名
       </Typography>
 
@@ -72,10 +81,10 @@ export const Game = () => {
             sx={{
               height: 8,
               borderRadius: 1,
-              bgcolor: 'rgba(255,255,255,0.2)',
+              bgcolor: "rgba(255,255,255,0.2)",
               mb: 2,
-              '& .MuiLinearProgress-bar': {
-                bgcolor: 'accent.main',
+              "& .MuiLinearProgress-bar": {
+                bgcolor: "accent.main",
               },
             }}
           />
@@ -95,8 +104,8 @@ export const Game = () => {
       )}
 
       {isLoading && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-          <CircularProgress sx={{ color: 'accent.main' }} />
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress sx={{ color: "accent.main" }} />
         </Box>
       )}
 
@@ -110,9 +119,10 @@ export const Game = () => {
       {question && !isLoading && (
         <Box>
           <Typography variant="body1" sx={{ mb: 3 }}>
-            這首歌的歌手是 <strong>{question.correct.artist}</strong>，請問歌名是？
+            這首歌的歌手是 <strong>{question.correct.artist}</strong>
+            ，請問歌名是？
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             {question.options.map((opt) => (
               <Button
                 key={opt}
@@ -121,17 +131,20 @@ export const Game = () => {
                 onClick={() => handleSelect(opt)}
                 disabled={!!selected}
                 sx={{
-                  color: 'white',
-                  borderColor: 'primary.main',
-                  '&:hover': { borderColor: 'accent.main', bgcolor: 'rgba(0,255,255,0.1)' },
+                  color: "white",
+                  borderColor: "primary.main",
+                  "&:hover": {
+                    borderColor: "accent.main",
+                    bgcolor: "rgba(0,255,255,0.1)",
+                  },
                   ...(isCorrect(opt) && {
-                    borderColor: 'accent.main',
-                    bgcolor: 'rgba(0,255,255,0.2)',
-                    color: 'accent.main',
+                    borderColor: "accent.main",
+                    bgcolor: "rgba(0,255,255,0.2)",
+                    color: "accent.main",
                   }),
                   ...(isWrong(opt) && {
-                    borderColor: 'error.main',
-                    bgcolor: 'rgba(255,0,0,0.2)',
+                    borderColor: "error.main",
+                    bgcolor: "rgba(255,0,0,0.2)",
                   }),
                 }}
               >
@@ -154,7 +167,7 @@ export const Game = () => {
 
       {/* 遊戲結束：顯示最終分數與再玩一輪 */}
       {isGameOver && !question && (
-        <Box sx={{ textAlign: 'center', py: 2 }}>
+        <Box sx={{ textAlign: "center", py: 2 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             遊戲結束！最終分數：{score}
           </Typography>
@@ -170,5 +183,5 @@ export const Game = () => {
         </Box>
       )}
     </Box>
-  )
-}
+  );
+};
