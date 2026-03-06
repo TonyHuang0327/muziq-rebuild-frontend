@@ -84,6 +84,7 @@ export const useGameSession = () => {
     isGameOver,
     question,
     selected,
+    totalQuestions: MAX_QUESTIONS,
     startGame,
     handleSelect,
     handleNext,

@@ -20,6 +20,7 @@ export const Game = () => {
     isGameOver,
     question,
     selected,
+    totalQuestions,
     startGame,
     handleSelect,
     handleNext,
@@ -50,7 +51,7 @@ export const Game = () => {
   // 進度：已作答題數 / 10 * 100；選答後該題算作答完
   const progressValue = isGameOver
     ? 100
-    : ((questionIndex + (selected ? 1 : 0)) / 10) * 100;
+    : ((questionIndex + (selected ? 1 : 0)) / totalQuestions) * 100;
 
   const isNotStarted = !question && !isGameOver && !isLoading;
   const showScoreAndProgress = !isNotStarted;
