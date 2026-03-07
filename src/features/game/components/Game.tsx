@@ -54,7 +54,7 @@ export const Game = () => {
     : ((questionIndex + (selected ? 1 : 0)) / totalQuestions) * 100;
 
   const isNotStarted = !question && !isGameOver && !isLoading;
-  const showScoreAndProgress = !isNotStarted;
+  const showScoreAndProgress = !!question || isGameOver;
 
   return (
     <Box
