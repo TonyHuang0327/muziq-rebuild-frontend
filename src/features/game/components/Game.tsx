@@ -119,6 +119,7 @@ export const Game = () => {
       {/* 遊戲進行中：顯示題目與選項 */}
       {question && !isLoading && (
         <Box>
+          <audio src={question.correct.previewUrl} autoPlay />
           <Typography variant="body1" sx={{ mb: 3 }}>
             這首歌的歌手是 <strong>{question.correct.artist}</strong>
             ，請問歌名是？
