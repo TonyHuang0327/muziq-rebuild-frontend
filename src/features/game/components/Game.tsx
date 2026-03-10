@@ -124,7 +124,7 @@ export const Game = () => {
             src={question.correct.previewUrl}
             autoPlay
           >
-            <track default kind="captions" />
+            <track default kind="captions" src={question.correct.previewUrl} />
           </audio>
           <Typography variant="body1" sx={{ mb: 3 }}>
             這首歌的歌手是 <strong>{question.correct.artist}</strong>
