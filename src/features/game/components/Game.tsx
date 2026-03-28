@@ -5,9 +5,21 @@ import {
   CircularProgress,
   Alert,
   LinearProgress,
+  Stack,
 } from "@mui/material";
+import { muziqTheme } from "../../../theme";
 import { usePlaylistQuery } from "../queries";
 import { useGameSession } from "../hooks/useGameSession";
+
+const TITLE_SHADOW_COLOR = muziqTheme.palette.accent.main;
+const TITLE_SHADOW_LAYERS = 5;
+const titleLayeredShadow = Array.from(
+  { length: TITLE_SHADOW_LAYERS },
+  (_, i) => {
+    const n = i + 1;
+    return `${n}px ${n}px ${TITLE_SHADOW_COLOR}`;
+  },
+).join(", ");
 
 export const Game = () => {
   const { data, isLoading, error, refetch } = usePlaylistQuery({
@@ -57,20 +69,23 @@ export const Game = () => {
   const showScoreAndProgress = !!question || isGameOver;
 
   return (
-    <Box
-      sx={{
-        maxWidth: 480,
-        mx: "auto",
-        p: 3,
-        borderRadius: 2,
-        bgcolor: "secondary.main",
-        color: "white",
-      }}
+    <Stack
+      direction="column"
+      alignItems="center"
+      justifyContent="center"
+      spacing={2}
     >
-      <Typography variant="h5" sx={{ mb: 1, color: "primary.main" }}>
-        猜歌名
+      <Typography
+        variant="h1"
+        sx={{
+          mb: 1,
+          color: "primary.main",
+          fontWeight: "bold",
+          textShadow: titleLayeredShadow,
+        }}
+      >
+        MUZIQ
       </Typography>
-
       {showScoreAndProgress && (
         <>
           <Typography variant="body2" sx={{ mb: 1 }}>
@@ -93,15 +108,35 @@ export const Game = () => {
       )}
 
       {isNotStarted && (
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          onClick={handleStart}
-          sx={{ py: 1.5, px: 4 }}
-        >
-          開始遊戲
-        </Button>
+        <>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleStart}
+            sx={{
+              py: 1.5,
+              width: "400px",
+              boxShadow:
+                "1px 1px 0 0 #b2241e,2px 2px 0 0 #b2241e,3px 3px 0 0 #b2241e,4px 4px 0 0 #b2241e,5px 5px 0 0 #b2241e",
+            }}
+          >
+            <Typography variant="h6">創建房間</Typography>
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={handleStart}
+            sx={{
+              py: 1.5,
+              width: "400px",
+              boxShadow:
+                "1px 1px 0 0 #b2241e,2px 2px 0 0 #b2241e,3px 3px 0 0 #b2241e,4px 4px 0 0 #b2241e,5px 5px 0 0 #b2241e",
+            }}
+          >
+            <Typography variant="h6">練習模式</Typography>
+          </Button>
+        </>
       )}
 
       {isLoading && (
@@ -190,6 +225,6 @@ export const Game = () => {
           </Button>
         </Box>
       )}
-    </Box>
+    </Stack>
   );
 };

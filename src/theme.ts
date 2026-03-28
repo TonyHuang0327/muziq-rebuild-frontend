@@ -1,29 +1,28 @@
-import { createTheme } from '@mui/material/styles'
+import { createTheme } from "@mui/material/styles";
 
-declare module '@mui/material/styles' {
+declare module "@mui/material/styles" {
   interface Palette {
-    accent: Palette['primary']
+    accent: Palette["primary"];
   }
   interface PaletteOptions {
-    accent?: PaletteOptions['primary']
+    accent?: PaletteOptions["primary"];
   }
 }
-
-/** MUZIQ 品牌設計 Token */
 export const muziqTheme = createTheme({
   palette: {
-    mode: 'dark',
-    primary: { main: '#8A2BE2' },
-    secondary: { main: '#4B0082' },
-    background: { default: '#1a0a2e', paper: '#2d1b4e' },
-    // Neon Cyan 正確答案高亮
-    accent: { main: '#00FFFF' },
+    primary: { main: "#fea42a" },
+    secondary: { main: "#55d4c5" },
+    accent: { main: "#b2241e" },
+    background: { default: "#eef6ff" },
   },
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: { backgroundColor: '#1a0a2e' },
+        // 與像素動態背景銜接，避免載入時露出亮色底
+        body: {
+          backgroundColor: "#0c0e12",
+        },
       },
     },
   },
-})
+});
