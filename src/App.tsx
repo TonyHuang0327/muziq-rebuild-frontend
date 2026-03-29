@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { PixelMusicBackground } from "./components/PixelMusicBackground";
-import { Game } from "./features/game/components/Game";
+import { Game } from "./components/Game";
 
 const App = () => (
   <Box

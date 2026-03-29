@@ -7,10 +7,10 @@ import {
   LinearProgress,
   Stack,
 } from "@mui/material";
-import { keyframes } from "@mui/material/styles";
-import { muziqTheme } from "../../../theme";
+import { muziqTheme } from "../theme";
 import { usePlaylistQuery } from "../queries";
 import { useGameSession } from "../hooks/useGameSession";
+import { HomePageMenuButton } from "./HomePageMenuButton";
 
 const TITLE_SHADOW_COLOR = muziqTheme.palette.accent.main;
 const TITLE_SHADOW_LAYERS = 5;
@@ -21,25 +21,6 @@ const titleLayeredShadow = Array.from(
     return `${n}px ${n}px ${TITLE_SHADOW_COLOR}`;
   },
 ).join(", ");
-
-/** 主選單按鈕：緩慢上下浮動 */
-const buttonFloat = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-`;
-
-const BUTTON_PIXEL_SHADOW =
-  "1px 1px 0 0 #b2241e,2px 2px 0 0 #b2241e,3px 3px 0 0 #b2241e,4px 4px 0 0 #b2241e,5px 5px 0 0 #b2241e";
-
-const menuButtonFloatSx = {
-  py: 1.5,
-  width: "400px",
-  boxShadow: BUTTON_PIXEL_SHADOW,
-  animation: `${buttonFloat} 2s ease-in-out infinite`,
-  "@media (prefers-reduced-motion: reduce)": {
-    animation: "none",
-  },
-} as const;
 
 export const Game = () => {
   const { data, isLoading, error, refetch } = usePlaylistQuery({
@@ -149,26 +130,9 @@ export const Game = () => {
 
         {isNotStarted && (
           <>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleStart}
-              sx={menuButtonFloatSx}
-            >
-              <Typography variant="h6">創建房間</Typography>
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={handleStart}
-              sx={{
-                ...menuButtonFloatSx,
-                animationDelay: "0.35s",
-              }}
-            >
-              <Typography variant="h6">練習模式</Typography>
-            </Button>
+            {/* TODO: create room implementation */}
+            <HomePageMenuButton onClick={handleStart} text="創建房間" />
+            <HomePageMenuButton onClick={handleStart} text="練習模式" />
           </>
         )}
 
@@ -191,13 +155,7 @@ export const Game = () => {
               key={question.correct.previewUrl}
               src={question.correct.previewUrl}
               autoPlay
-            >
-              <track
-                default
-                kind="captions"
-                src={question.correct.previewUrl}
-              />
-            </audio>
+            />
             <Typography variant="body1" sx={{ mb: 3 }}>
               這首歌的歌手是 <strong>{question.correct.artist}</strong>
               ，請問歌名是？

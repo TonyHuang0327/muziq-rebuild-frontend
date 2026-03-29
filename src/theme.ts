@@ -10,10 +10,11 @@ declare module "@mui/material/styles" {
 }
 export const muziqTheme = createTheme({
   palette: {
+    mode: "dark",
     primary: { main: "#fea42a" },
     secondary: { main: "#55d4c5" },
     accent: { main: "#b2241e" },
-    background: { default: "#eef6ff" },
+    background: { default: "#0c0e12" },
   },
   components: {
     MuiCssBaseline: {
