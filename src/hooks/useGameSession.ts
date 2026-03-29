@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { Track } from "../../../types/playlist";
+import type { Track } from "../types/playlist";
 
 /** Fisher-Yates 洗牌 */
 const shuffleArray = <T>(arr: T[]): T[] => {

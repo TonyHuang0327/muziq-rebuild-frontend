@@ -1,19 +1,26 @@
-import { Box } from '@mui/material'
-import { Game } from './features/game/components/Game'
-import './App.css'
+import { Box } from "@mui/material";
+import { PixelMusicBackground } from "./components/PixelMusicBackground";
+import { Game } from "./components/Game";
 
 const App = () => (
   <Box
     sx={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      bgcolor: 'background.default',
+      position: "relative",
+      minHeight: "100vh",
+      isolation: "isolate",
     }}
   >
-    <Game />
+    <PixelMusicBackground />
+    <Box
+      sx={{
+        position: "relative",
+        zIndex: 1,
+        minHeight: "100vh",
+      }}
+    >
+      <Game />
+    </Box>
   </Box>
-)
+);
 
-export default App
+export default App;
