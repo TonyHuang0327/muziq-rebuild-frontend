@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -10,6 +11,8 @@ import {
 import { muziqTheme } from "../theme";
 import { usePlaylistQuery } from "../queries";
 import { useGameSession } from "../hooks/useGameSession";
+import { CreateRoomDialog } from "../features/room/components/CreateRoomDialog";
+import type { CreateRoomFormValues } from "../features/room/types/room";
 import { HomePageMenuButton } from "./HomePageMenuButton";
 
 const TITLE_SHADOW_COLOR = muziqTheme.palette.accent.main;
@@ -23,6 +26,7 @@ const titleLayeredShadow = Array.from(
 ).join(", ");
 
 export const Game = () => {
+  const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const { data, isLoading, error, refetch } = usePlaylistQuery({
     enabled: false,
   });
@@ -49,6 +53,11 @@ export const Game = () => {
     if (result.data?.tracks?.length) {
       startGame(result.data.tracks);
     }
+  };
+
+  const handleCreateRoom = (values: CreateRoomFormValues) => {
+    // TODO: 串接 POST /api/rooms
+    console.log("創建房間", values);
   };
 
   const isCorrect = (option: string) => {
@@ -130,11 +139,19 @@ export const Game = () => {
 
         {isNotStarted && (
           <>
-            {/* TODO: create room implementation */}
-            <HomePageMenuButton onClick={handleStart} text="創建房間" />
+            <HomePageMenuButton
+              onClick={() => setCreateRoomOpen(true)}
+              text="創建房間"
+            />
             <HomePageMenuButton onClick={handleStart} text="練習模式" />
           </>
         )}
+
+        <CreateRoomDialog
+          open={createRoomOpen}
+          onClose={() => setCreateRoomOpen(false)}
+          onSubmit={handleCreateRoom}
+        />
 
         {isLoading && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
