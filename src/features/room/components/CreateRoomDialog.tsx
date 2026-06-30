@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
+  Alert,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -9,6 +11,7 @@ import {
   Stack,
   Switch,
   TextField,
+  styled,
 } from "@mui/material";
 import type { CreateRoomFormValues } from "../types/room";
 
@@ -24,10 +27,12 @@ type FormErrors = Partial<Record<keyof CreateRoomFormValues, string>>;
 interface CreateRoomDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: CreateRoomFormValues) => void;
+  onSubmit: (values: CreateRoomFormValues) => Promise<void>;
+  isSubmitting?: boolean;
+  submitError?: string | null;
 }
 
-const textFieldSx = {
+const RoomTextField = styled(TextField)({
   "& .MuiOutlinedInput-root": {
     color: "white",
     "& fieldset": { borderColor: "primary.main" },
@@ -38,7 +43,7 @@ const textFieldSx = {
     color: "rgba(255,255,255,0.7)",
     "&.Mui-focused": { color: "primary.main" },
   },
-} as const;
+});
 
 const validateForm = (values: CreateRoomFormValues): FormErrors => {
   const errors: FormErrors = {};
@@ -69,6 +74,8 @@ export const CreateRoomDialog = ({
   open,
   onClose,
   onSubmit,
+  isSubmitting = false,
+  submitError = null,
 }: CreateRoomDialogProps) => {
   const [formValues, setFormValues] =
     useState<CreateRoomFormValues>(DEFAULT_FORM_VALUES);
@@ -80,23 +87,28 @@ export const CreateRoomDialog = ({
   };
 
   const handleClose = () => {
+    if (isSubmitting) return;
     resetForm();
     onClose();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const validationErrors = validateForm(formValues);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
 
-    onSubmit({
-      ...formValues,
-      roomName: formValues.roomName.trim(),
-    });
-    resetForm();
-    onClose();
+    try {
+      await onSubmit({
+        ...formValues,
+        roomName: formValues.roomName.trim(),
+      });
+      resetForm();
+      onClose();
+    } catch {
+      // 錯誤由 submitError 顯示，彈窗保持開啟
+    }
   };
 
   const updateField = <K extends keyof CreateRoomFormValues>(
@@ -119,32 +131,23 @@ export const CreateRoomDialog = ({
       onClose={handleClose}
       fullWidth
       maxWidth="sm"
-      slotProps={{
-        paper: {
-          sx: {
-            bgcolor: "background.default",
-            border: "2px solid",
-            borderColor: "primary.main",
-            borderRadius: 0,
-          },
-        },
-      }}
     >
-      <DialogTitle sx={{ color: "primary.main", fontWeight: "bold" }}>
-        創建房間
-      </DialogTitle>
+      <DialogTitle>創建房間</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
-          <TextField
+          {submitError && (
+            <Alert severity="error">{submitError}</Alert>
+          )}
+          <RoomTextField
             label="房間名稱"
             fullWidth
             value={formValues.roomName}
             onChange={(e) => updateField("roomName", e.target.value)}
             error={!!errors.roomName}
             helperText={errors.roomName}
-            sx={textFieldSx}
+            disabled={isSubmitting}
           />
-          <TextField
+          <RoomTextField
             label="房間人數"
             type="number"
             fullWidth
@@ -155,9 +158,9 @@ export const CreateRoomDialog = ({
             error={!!errors.maxPlayers}
             helperText={errors.maxPlayers ?? "2 至 8 人"}
             slotProps={{ htmlInput: { min: 2, max: 8 } }}
-            sx={textFieldSx}
+            disabled={isSubmitting}
           />
-          <TextField
+          <RoomTextField
             label="題目秒數"
             type="number"
             fullWidth
@@ -168,7 +171,7 @@ export const CreateRoomDialog = ({
             error={!!errors.questionSeconds}
             helperText={errors.questionSeconds ?? "10 至 120 秒"}
             slotProps={{ htmlInput: { min: 10, max: 120 } }}
-            sx={textFieldSx}
+            disabled={isSubmitting}
           />
           <FormControlLabel
             control={
@@ -176,6 +179,7 @@ export const CreateRoomDialog = ({
                 checked={formValues.isPrivate}
                 onChange={(e) => updateField("isPrivate", e.target.checked)}
                 color="primary"
+                disabled={isSubmitting}
               />
             }
             label="私人房間"
@@ -184,10 +188,18 @@ export const CreateRoomDialog = ({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleClose} sx={{ color: "white" }}>
+        <Button onClick={handleClose} disabled={isSubmitting} sx={{ color: "white" }}>
           取消
         </Button>
-        <Button variant="contained" color="primary" onClick={handleSubmit}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          startIcon={
+            isSubmitting ? <CircularProgress size={16} color="inherit" /> : undefined
+          }
+        >
           建立
         </Button>
       </DialogActions>

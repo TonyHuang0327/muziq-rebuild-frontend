@@ -12,6 +12,7 @@ import { muziqTheme } from "../theme";
 import { usePlaylistQuery } from "../queries";
 import { useGameSession } from "../hooks/useGameSession";
 import { CreateRoomDialog } from "../features/room/components/CreateRoomDialog";
+import { useCreateRoomMutation } from "../features/room/queries/useCreateRoomMutation";
 import type { CreateRoomFormValues } from "../features/room/types/room";
 import { HomePageMenuButton } from "./HomePageMenuButton";
 
@@ -27,6 +28,8 @@ const titleLayeredShadow = Array.from(
 
 export const Game = () => {
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
+  const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
+  const createRoomMutation = useCreateRoomMutation();
   const { data, isLoading, error, refetch } = usePlaylistQuery({
     enabled: false,
   });
@@ -55,9 +58,14 @@ export const Game = () => {
     }
   };
 
-  const handleCreateRoom = (values: CreateRoomFormValues) => {
-    // TODO: 串接 POST /api/rooms
-    console.log("創建房間", values);
+  const handleCreateRoom = async (values: CreateRoomFormValues) => {
+    const room = await createRoomMutation.mutateAsync(values);
+    setCreatedRoomCode(room.roomCode);
+  };
+
+  const handleCloseCreateRoomDialog = () => {
+    setCreateRoomOpen(false);
+    createRoomMutation.reset();
   };
 
   const isCorrect = (option: string) => {
@@ -137,6 +145,16 @@ export const Game = () => {
           </>
         )}
 
+        {isNotStarted && createdRoomCode && (
+          <Alert
+            severity="success"
+            sx={{ width: "60%", maxWidth: 400 }}
+            onClose={() => setCreatedRoomCode(null)}
+          >
+            房間已建立，代碼：{createdRoomCode}
+          </Alert>
+        )}
+
         {isNotStarted && (
           <>
             <HomePageMenuButton
@@ -149,8 +167,10 @@ export const Game = () => {
 
         <CreateRoomDialog
           open={createRoomOpen}
-          onClose={() => setCreateRoomOpen(false)}
+          onClose={handleCloseCreateRoomDialog}
           onSubmit={handleCreateRoom}
+          isSubmitting={createRoomMutation.isPending}
+          submitError={createRoomMutation.error?.message ?? null}
         />
 
         {isLoading && (
