@@ -25,5 +25,22 @@ export const muziqTheme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: "#0c0e12",
+          border: "2px solid #fea42a",
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: {
+          color: "#fea42a",
+          fontWeight: "bold",
+        },
+      },
+    },
   },
 });
