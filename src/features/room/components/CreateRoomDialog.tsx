@@ -1,24 +1,41 @@
 import { useState } from "react";
 import {
-  Alert,
   Button,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
   FormControlLabel,
+  FormHelperText,
+  FormLabel,
+  Radio,
+  RadioGroup,
   Stack,
   Switch,
   TextField,
   styled,
 } from "@mui/material";
+import { AppSnackbar } from "../../../components/AppSnackbar";
 import type { CreateRoomFormValues } from "../types/room";
+
+/** 題目秒數選項；0 代表不限時 */
+const QUESTION_SECONDS_OPTIONS = [
+  { value: 3, label: "3 秒" },
+  { value: 5, label: "5 秒" },
+  { value: 10, label: "10 秒" },
+  { value: 0, label: "不限" },
+] as const;
+
+const ALLOWED_QUESTION_SECONDS = new Set<number>(
+  QUESTION_SECONDS_OPTIONS.map((option) => option.value),
+);
 
 const DEFAULT_FORM_VALUES: CreateRoomFormValues = {
   roomName: "",
   maxPlayers: 4,
-  questionSeconds: 30,
+  questionSeconds: 10,
   isPrivate: false,
 };
 
@@ -30,6 +47,7 @@ interface CreateRoomDialogProps {
   onSubmit: (values: CreateRoomFormValues) => Promise<void>;
   isSubmitting?: boolean;
   submitError?: string | null;
+  onClearSubmitError?: () => void;
 }
 
 const RoomTextField = styled(TextField)({
@@ -55,16 +73,16 @@ const validateForm = (values: CreateRoomFormValues): FormErrors => {
     errors.roomName = "房間名稱不可超過 20 字";
   }
 
-  if (!Number.isInteger(values.maxPlayers) || values.maxPlayers < 2 || values.maxPlayers > 8) {
+  if (
+    !Number.isInteger(values.maxPlayers) ||
+    values.maxPlayers < 2 ||
+    values.maxPlayers > 8
+  ) {
     errors.maxPlayers = "房間人數須為 2 至 8 的整數";
   }
 
-  if (
-    !Number.isInteger(values.questionSeconds) ||
-    values.questionSeconds < 10 ||
-    values.questionSeconds > 120
-  ) {
-    errors.questionSeconds = "題目秒數須為 10 至 120 的整數";
+  if (!ALLOWED_QUESTION_SECONDS.has(values.questionSeconds)) {
+    errors.questionSeconds = "請選擇題目秒數";
   }
 
   return errors;
@@ -76,6 +94,7 @@ export const CreateRoomDialog = ({
   onSubmit,
   isSubmitting = false,
   submitError = null,
+  onClearSubmitError,
 }: CreateRoomDialogProps) => {
   const [formValues, setFormValues] =
     useState<CreateRoomFormValues>(DEFAULT_FORM_VALUES);
@@ -107,7 +126,7 @@ export const CreateRoomDialog = ({
       resetForm();
       onClose();
     } catch {
-      // 錯誤由 submitError 顯示，彈窗保持開啟
+      // 錯誤由 AppSnackbar（submitError）顯示，彈窗保持開啟
     }
   };
 
@@ -126,83 +145,107 @@ export const CreateRoomDialog = ({
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      fullWidth
-      maxWidth="sm"
-    >
-      <DialogTitle>創建房間</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2.5} sx={{ pt: 1 }}>
-          {submitError && (
-            <Alert severity="error">{submitError}</Alert>
-          )}
-          <RoomTextField
-            label="房間名稱"
-            fullWidth
-            value={formValues.roomName}
-            onChange={(e) => updateField("roomName", e.target.value)}
-            error={!!errors.roomName}
-            helperText={errors.roomName}
+    <>
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+        <DialogTitle>創建房間</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2.5} sx={{ pt: 1 }}>
+            <RoomTextField
+              label="房間名稱"
+              fullWidth
+              value={formValues.roomName}
+              onChange={(e) => updateField("roomName", e.target.value)}
+              error={!!errors.roomName}
+              helperText={errors.roomName}
+              disabled={isSubmitting}
+            />
+            <RoomTextField
+              label="房間人數"
+              type="number"
+              fullWidth
+              value={formValues.maxPlayers}
+              onChange={(e) =>
+                updateField("maxPlayers", Number(e.target.value))
+              }
+              error={!!errors.maxPlayers}
+              helperText={errors.maxPlayers ?? "2 至 8 人"}
+              slotProps={{ htmlInput: { min: 2, max: 8 } }}
+              disabled={isSubmitting}
+            />
+            <FormControl
+              error={!!errors.questionSeconds}
+              disabled={isSubmitting}
+            >
+              <FormLabel
+                sx={{
+                  color: "rgba(255,255,255,0.7)",
+                  "&.Mui-focused": { color: "primary.main" },
+                }}
+              >
+                題目秒數
+              </FormLabel>
+              <RadioGroup
+                row
+                value={formValues.questionSeconds}
+                onChange={(e) =>
+                  updateField("questionSeconds", Number(e.target.value))
+                }
+              >
+                {QUESTION_SECONDS_OPTIONS.map((option) => (
+                  <FormControlLabel
+                    key={option.value}
+                    value={option.value}
+                    control={<Radio color="primary" />}
+                    label={option.label}
+                    sx={{ color: "white" }}
+                  />
+                ))}
+              </RadioGroup>
+              {errors.questionSeconds && (
+                <FormHelperText>{errors.questionSeconds}</FormHelperText>
+              )}
+            </FormControl>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formValues.isPrivate}
+                  onChange={(e) => updateField("isPrivate", e.target.checked)}
+                  color="primary"
+                  disabled={isSubmitting}
+                />
+              }
+              label="私人房間"
+              sx={{ color: "white" }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={handleClose}
             disabled={isSubmitting}
-          />
-          <RoomTextField
-            label="房間人數"
-            type="number"
-            fullWidth
-            value={formValues.maxPlayers}
-            onChange={(e) =>
-              updateField("maxPlayers", Number(e.target.value))
-            }
-            error={!!errors.maxPlayers}
-            helperText={errors.maxPlayers ?? "2 至 8 人"}
-            slotProps={{ htmlInput: { min: 2, max: 8 } }}
-            disabled={isSubmitting}
-          />
-          <RoomTextField
-            label="題目秒數"
-            type="number"
-            fullWidth
-            value={formValues.questionSeconds}
-            onChange={(e) =>
-              updateField("questionSeconds", Number(e.target.value))
-            }
-            error={!!errors.questionSeconds}
-            helperText={errors.questionSeconds ?? "10 至 120 秒"}
-            slotProps={{ htmlInput: { min: 10, max: 120 } }}
-            disabled={isSubmitting}
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formValues.isPrivate}
-                onChange={(e) => updateField("isPrivate", e.target.checked)}
-                color="primary"
-                disabled={isSubmitting}
-              />
-            }
-            label="私人房間"
             sx={{ color: "white" }}
-          />
-        </Stack>
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleClose} disabled={isSubmitting} sx={{ color: "white" }}>
-          取消
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          startIcon={
-            isSubmitting ? <CircularProgress size={16} color="inherit" /> : undefined
-          }
-        >
-          建立
-        </Button>
-      </DialogActions>
-    </Dialog>
+          >
+            取消
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            startIcon={
+              isSubmitting ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : undefined
+            }
+          >
+            建立
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <AppSnackbar
+        message={submitError}
+        onClose={onClearSubmitError ?? (() => undefined)}
+      />
+    </>
   );
 };

@@ -4,7 +4,6 @@ import {
   Button,
   Typography,
   CircularProgress,
-  Alert,
   LinearProgress,
   Stack,
 } from "@mui/material";
@@ -14,6 +13,7 @@ import { useGameSession } from "../hooks/useGameSession";
 import { CreateRoomDialog } from "../features/room/components/CreateRoomDialog";
 import { useCreateRoomMutation } from "../features/room/queries/useCreateRoomMutation";
 import type { CreateRoomFormValues } from "../features/room/types/room";
+import { AppSnackbar } from "./AppSnackbar";
 import { HomePageMenuButton } from "./HomePageMenuButton";
 
 const TITLE_SHADOW_COLOR = muziqTheme.palette.accent.main;
@@ -29,11 +29,19 @@ const titleLayeredShadow = Array.from(
 export const Game = () => {
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
+  /** 已關閉的播放清單錯誤訊息；與目前 error 不同時才再顯示 */
+  const [dismissedPlaylistError, setDismissedPlaylistError] = useState<
+    string | null
+  >(null);
   const createRoomMutation = useCreateRoomMutation();
   const { data, isLoading, error, refetch } = usePlaylistQuery({
     enabled: false,
   });
   const tracks = data?.tracks ?? [];
+  const playlistErrorMessage =
+    error?.message && error.message !== dismissedPlaylistError
+      ? error.message
+      : null;
   const {
     score,
     questionIndex,
@@ -48,6 +56,7 @@ export const Game = () => {
   } = useGameSession();
 
   const handleStart = async () => {
+    setDismissedPlaylistError(null);
     if (data?.tracks?.length) {
       startGame(tracks);
       return;
@@ -145,16 +154,6 @@ export const Game = () => {
           </>
         )}
 
-        {isNotStarted && createdRoomCode && (
-          <Alert
-            severity="success"
-            sx={{ width: "60%", maxWidth: 400 }}
-            onClose={() => setCreatedRoomCode(null)}
-          >
-            房間已建立，代碼：{createdRoomCode}
-          </Alert>
-        )}
-
         {isNotStarted && (
           <>
             <HomePageMenuButton
@@ -171,6 +170,7 @@ export const Game = () => {
           onSubmit={handleCreateRoom}
           isSubmitting={createRoomMutation.isPending}
           submitError={createRoomMutation.error?.message ?? null}
+          onClearSubmitError={() => createRoomMutation.reset()}
         />
 
         {isLoading && (
@@ -179,11 +179,20 @@ export const Game = () => {
           </Box>
         )}
 
-        {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error.message}
-          </Alert>
-        )}
+        <AppSnackbar
+          message={
+            createdRoomCode
+              ? `房間已建立，代碼：${createdRoomCode}`
+              : null
+          }
+          severity="success"
+          onClose={() => setCreatedRoomCode(null)}
+        />
+
+        <AppSnackbar
+          message={playlistErrorMessage}
+          onClose={() => setDismissedPlaylistError(error?.message ?? null)}
+        />
 
         {/* 遊戲進行中：顯示題目與選項 */}
         {question && !isLoading && (

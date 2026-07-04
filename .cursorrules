@@ -38,7 +38,7 @@
 
 - **State Feedback**: Use MUI `CircularProgress` inside buttons or `disabled` state during API calls.
 - **Skeleton Screens**: Prefer MUI `Skeleton` over "Loading..." text.
-- **Error Handling**: Display errors via MUI `Alert` or `Snackbar`.
+- **Feedback (Snackbar)**: Display all transient feedback (error / success / warning / info) exclusively via the shared `AppSnackbar` (MUI `Snackbar` wrapping `Alert`). Standalone `Alert` is forbidden. Field validation stays on `helperText` / `FormHelperText`.
 
 ## 5. Implementation Instructions
 
