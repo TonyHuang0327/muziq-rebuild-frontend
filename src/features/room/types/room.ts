@@ -15,3 +15,15 @@ export interface CreateRoomResponse {
   questionSeconds: number;
   isPrivate: boolean;
 }
+
+/** 房間玩家 */
+export interface RoomPlayer {
+  id: string;
+  name: string;
+  isHost: boolean;
+}
+
+/** 房間詳情（含玩家列表） */
+export interface RoomDetail extends CreateRoomResponse {
+  players: RoomPlayer[];
+}

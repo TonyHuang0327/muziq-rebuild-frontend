@@ -19,4 +19,15 @@ export const handlers = [
       ...body,
     })
   }),
+  http.get('/api/rooms/:roomId', ({ params }) => {
+    return HttpResponse.json({
+      roomId: params.roomId,
+      roomCode: 'MOCK01',
+      roomName: '模擬房間',
+      maxPlayers: 4,
+      questionSeconds: 10,
+      isPrivate: false,
+      players: [{ id: '1', name: '你', isHost: true }],
+    })
+  }),
 ]

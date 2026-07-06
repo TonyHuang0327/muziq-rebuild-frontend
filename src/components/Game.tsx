@@ -11,7 +11,9 @@ import { muziqTheme } from "../theme";
 import { usePlaylistQuery } from "../queries";
 import { useGameSession } from "../hooks/useGameSession";
 import { CreateRoomDialog } from "../features/room/components/CreateRoomDialog";
+import { RoomLobby } from "../features/room/components/RoomLobby";
 import { useCreateRoomMutation } from "../features/room/queries/useCreateRoomMutation";
+import { useRoomQuery } from "../features/room/queries/useRoomQuery";
 import type { CreateRoomFormValues } from "../features/room/types/room";
 import { AppSnackbar } from "./AppSnackbar";
 import { HomePageMenuButton } from "./HomePageMenuButton";
@@ -28,12 +30,13 @@ const titleLayeredShadow = Array.from(
 
 export const Game = () => {
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
-  const [createdRoomCode, setCreatedRoomCode] = useState<string | null>(null);
+  const [pendingRoomId, setPendingRoomId] = useState<string | null>(null);
   /** 已關閉的播放清單錯誤訊息；與目前 error 不同時才再顯示 */
   const [dismissedPlaylistError, setDismissedPlaylistError] = useState<
     string | null
   >(null);
   const createRoomMutation = useCreateRoomMutation();
+  const { data: roomDetail, isLoading: isLoadingRoom } = useRoomQuery(pendingRoomId);
   const { data, isLoading, error, refetch } = usePlaylistQuery({
     enabled: false,
   });
@@ -69,12 +72,23 @@ export const Game = () => {
 
   const handleCreateRoom = async (values: CreateRoomFormValues) => {
     const room = await createRoomMutation.mutateAsync(values);
-    setCreatedRoomCode(room.roomCode);
+    setPendingRoomId(room.roomId);
   };
 
   const handleCloseCreateRoomDialog = () => {
     setCreateRoomOpen(false);
     createRoomMutation.reset();
+  };
+
+  const handleLeaveRoom = () => {
+    setPendingRoomId(null);
+    createRoomMutation.reset();
+  };
+
+  const handleStartFromLobby = async () => {
+    setPendingRoomId(null);
+    createRoomMutation.reset();
+    await handleStart();
   };
 
   const isCorrect = (option: string) => {
@@ -92,8 +106,40 @@ export const Game = () => {
     ? 100
     : ((questionIndex + (selected ? 1 : 0)) / totalQuestions) * 100;
 
-  const isNotStarted = !question && !isGameOver && !isLoading;
+  const isInLobby = Boolean(pendingRoomId);
+  const isNotStarted = !question && !isGameOver && !isLoading && !isInLobby;
   const showScoreAndProgress = !!question || isGameOver;
+
+  if (isInLobby) {
+    if (isLoadingRoom || !roomDetail) {
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "100vh",
+          }}
+        >
+          <CircularProgress sx={{ color: "primary.main" }} />
+        </Box>
+      );
+    }
+
+    return (
+      <Stack
+        alignItems="center"
+        justifyContent="center"
+        sx={{ minHeight: "100vh" }}
+      >
+        <RoomLobby
+          room={roomDetail}
+          onLeave={handleLeaveRoom}
+          onStart={handleStartFromLobby}
+        />
+      </Stack>
+    );
+  }
 
   return (
     <Box
@@ -178,16 +224,6 @@ export const Game = () => {
             <CircularProgress sx={{ color: "accent.main" }} />
           </Box>
         )}
-
-        <AppSnackbar
-          message={
-            createdRoomCode
-              ? `房間已建立，代碼：${createdRoomCode}`
-              : null
-          }
-          severity="success"
-          onClose={() => setCreatedRoomCode(null)}
-        />
 
         <AppSnackbar
           message={playlistErrorMessage}
