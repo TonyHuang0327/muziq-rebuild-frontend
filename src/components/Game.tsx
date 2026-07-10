@@ -1,308 +1,85 @@
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Typography,
-  CircularProgress,
-  LinearProgress,
-  Stack,
-} from "@mui/material";
-import { muziqTheme } from "../theme";
-import { usePlaylistQuery } from "../queries";
-import { useGameSession } from "../hooks/useGameSession";
-import { CreateRoomDialog } from "../features/room/components/CreateRoomDialog";
-import { RoomLobby } from "../features/room/components/RoomLobby";
-import { useCreateRoomMutation } from "../features/room/queries/useCreateRoomMutation";
-import { useRoomQuery } from "../features/room/queries/useRoomQuery";
-import type { CreateRoomFormValues } from "../features/room/types/room";
+import { Box, CircularProgress } from "@mui/material";
+import { GameHome } from "../features/game/components/GameHome";
+import { usePlaylistStart } from "../features/game/hooks/usePlaylistStart";
+import { RoomFlow } from "../features/room/components/RoomFlow";
+import { useRoomFlow } from "../features/room/hooks/useRoomFlow";
+import type { Track } from "../types/playlist";
 import { AppSnackbar } from "./AppSnackbar";
-import { HomePageMenuButton } from "./HomePageMenuButton";
-
-const TITLE_SHADOW_COLOR = muziqTheme.palette.accent.main;
-const TITLE_SHADOW_LAYERS = 5;
-const titleLayeredShadow = Array.from(
-  { length: TITLE_SHADOW_LAYERS },
-  (_, i) => {
-    const n = i + 1;
-    return `${n}px ${n}px ${TITLE_SHADOW_COLOR}`;
-  },
-).join(", ");
+import { GamePage } from "./GamePage";
+import { GameShell } from "./GameShell";
 
 export const Game = () => {
-  const [createRoomOpen, setCreateRoomOpen] = useState(false);
-  const [pendingRoomId, setPendingRoomId] = useState<string | null>(null);
-  /** 已關閉的播放清單錯誤訊息；與目前 error 不同時才再顯示 */
-  const [dismissedPlaylistError, setDismissedPlaylistError] = useState<
-    string | null
-  >(null);
-  const createRoomMutation = useCreateRoomMutation();
-  const { data: roomDetail, isLoading: isLoadingRoom } = useRoomQuery(pendingRoomId);
-  const { data, isLoading, error, refetch } = usePlaylistQuery({
-    enabled: false,
-  });
-  const tracks = data?.tracks ?? [];
-  const playlistErrorMessage =
-    error?.message && error.message !== dismissedPlaylistError
-      ? error.message
-      : null;
-  const {
-    score,
-    questionIndex,
-    isGameOver,
-    question,
-    selected,
-    totalQuestions,
-    startGame,
-    handleSelect,
-    handleNext,
-    resetGame,
-  } = useGameSession();
+  const roomFlow = useRoomFlow();
+  const playlist = usePlaylistStart();
+  const [isGameActive, setIsGameActive] = useState(false);
+  const [gameTracks, setGameTracks] = useState<Track[]>([]);
 
-  const handleStart = async () => {
-    setDismissedPlaylistError(null);
-    if (data?.tracks?.length) {
-      startGame(tracks);
-      return;
-    }
-    const result = await refetch();
-    if (result.data?.tracks?.length) {
-      startGame(result.data.tracks);
+  const handleStartPractice = async () => {
+    const tracks = await playlist.fetchTracksForGame();
+    if (tracks) {
+      setGameTracks(tracks);
+      setIsGameActive(true);
     }
   };
 
-  const handleCreateRoom = async (values: CreateRoomFormValues) => {
-    const room = await createRoomMutation.mutateAsync(values);
-    setPendingRoomId(room.roomId);
-  };
-
-  const handleCloseCreateRoomDialog = () => {
-    setCreateRoomOpen(false);
-    createRoomMutation.reset();
-  };
-
-  const handleLeaveRoom = () => {
-    setPendingRoomId(null);
-    createRoomMutation.reset();
+  const handleExitGame = () => {
+    setIsGameActive(false);
+    setGameTracks([]);
   };
 
   const handleStartFromLobby = async () => {
-    setPendingRoomId(null);
-    createRoomMutation.reset();
-    await handleStart();
+    roomFlow.handleLeaveLobby();
+    await handleStartPractice();
   };
 
-  const isCorrect = (option: string) => {
-    if (!question || !selected) return false;
-    return option === question.correct.title;
-  };
+  const showHome =
+    !isGameActive && !playlist.isLoading && !roomFlow.isInLobby;
 
-  const isWrong = (option: string) => {
-    if (!selected || !question) return false;
-    return selected === option && option !== question.correct.title;
-  };
-
-  // 進度：已作答題數 / 10 * 100；選答後該題算作答完
-  const progressValue = isGameOver
-    ? 100
-    : ((questionIndex + (selected ? 1 : 0)) / totalQuestions) * 100;
-
-  const isInLobby = Boolean(pendingRoomId);
-  const isNotStarted = !question && !isGameOver && !isLoading && !isInLobby;
-  const showScoreAndProgress = !!question || isGameOver;
-
-  if (isInLobby) {
-    if (isLoadingRoom || !roomDetail) {
-      return (
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "100vh",
-          }}
-        >
-          <CircularProgress sx={{ color: "primary.main" }} />
-        </Box>
-      );
-    }
-
+  if (roomFlow.isInLobby) {
     return (
-      <Stack
-        alignItems="center"
-        justifyContent="center"
-        sx={{ minHeight: "100vh" }}
-      >
-        <RoomLobby
-          room={roomDetail}
-          onLeave={handleLeaveRoom}
-          onStart={handleStartFromLobby}
-        />
-      </Stack>
+      <RoomFlow
+        roomDetail={roomFlow.roomDetail}
+        isLoadingRoom={roomFlow.isLoadingRoom}
+        onLeave={roomFlow.handleLeaveRoom}
+        onStart={handleStartFromLobby}
+      />
     );
   }
 
   return (
-    <Box
-      sx={{
-        position: "relative",
-        width: "100%",
-        minHeight: "100vh",
-      }}
-    >
-      <Box
-        alt="MUZIQ"
-        component="img"
-        src="/muziq.png"
-        sx={{
-          position: "absolute",
-          top: { xs: 12, sm: 16 },
-          left: { xs: 12, sm: 16 },
-          width: 200,
-          zIndex: 1,
-        }}
+    <GameShell>
+      {showHome && (
+        <GameHome
+          onStartPractice={handleStartPractice}
+          onOpenCreateRoom={roomFlow.openCreateRoom}
+          createRoomOpen={roomFlow.createRoomOpen}
+          onCloseCreateRoom={roomFlow.closeCreateRoom}
+          onCreateRoom={roomFlow.handleCreateRoom}
+          isSubmitting={roomFlow.isSubmitting}
+          submitError={roomFlow.submitError}
+          onClearSubmitError={roomFlow.clearSubmitError}
+        />
+      )}
+
+      {playlist.isLoading && (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress sx={{ color: "accent.main" }} />
+        </Box>
+      )}
+
+      <AppSnackbar
+        message={playlist.playlistErrorMessage}
+        onClose={playlist.dismissPlaylistError}
       />
-      <Stack
-        direction="column"
-        alignItems="center"
-        justifyContent="center"
-        spacing={2}
-        sx={{ minHeight: "100vh" }}
-      >
-        <Typography
-          variant="h1"
-          sx={{
-            mb: 1,
-            color: "primary.main",
-            fontWeight: "bold",
-            textShadow: titleLayeredShadow,
-          }}
-        >
-          MUZIQ
-        </Typography>
-        {showScoreAndProgress && (
-          <>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              分數：{score}
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={progressValue}
-              sx={{
-                height: 8,
-                borderRadius: 1,
-                bgcolor: "rgba(255,255,255,0.2)",
-                mb: 2,
-                "& .MuiLinearProgress-bar": {
-                  bgcolor: "accent.main",
-                },
-              }}
-            />
-          </>
-        )}
 
-        {isNotStarted && (
-          <>
-            <HomePageMenuButton
-              onClick={() => setCreateRoomOpen(true)}
-              text="創建房間"
-            />
-            <HomePageMenuButton onClick={handleStart} text="練習模式" />
-          </>
-        )}
-
-        <CreateRoomDialog
-          open={createRoomOpen}
-          onClose={handleCloseCreateRoomDialog}
-          onSubmit={handleCreateRoom}
-          isSubmitting={createRoomMutation.isPending}
-          submitError={createRoomMutation.error?.message ?? null}
-          onClearSubmitError={() => createRoomMutation.reset()}
+      {isGameActive && (
+        <GamePage
+          tracks={gameTracks}
+          isPlaylistLoading={playlist.isLoading}
+          onExit={handleExitGame}
         />
-
-        {isLoading && (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress sx={{ color: "accent.main" }} />
-          </Box>
-        )}
-
-        <AppSnackbar
-          message={playlistErrorMessage}
-          onClose={() => setDismissedPlaylistError(error?.message ?? null)}
-        />
-
-        {/* 遊戲進行中：顯示題目與選項 */}
-        {question && !isLoading && (
-          <Box>
-            <audio
-              key={question.correct.previewUrl}
-              src={question.correct.previewUrl}
-              autoPlay
-            />
-            <Typography variant="body1" sx={{ mb: 3 }}>
-              這首歌的歌手是 <strong>{question.correct.artist}</strong>
-              ，請問歌名是？
-            </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-              {question.options.map((opt) => (
-                <Button
-                  key={opt}
-                  variant="outlined"
-                  fullWidth
-                  onClick={() => handleSelect(opt)}
-                  disabled={!!selected}
-                  sx={{
-                    color: "white",
-                    borderColor: "primary.main",
-                    "&:hover": {
-                      borderColor: "accent.main",
-                      bgcolor: "rgba(0,255,255,0.1)",
-                    },
-                    ...(isCorrect(opt) && {
-                      borderColor: "accent.main",
-                      bgcolor: "rgba(0,255,255,0.2)",
-                      color: "accent.main",
-                    }),
-                    ...(isWrong(opt) && {
-                      borderColor: "error.main",
-                      bgcolor: "rgba(255,0,0,0.2)",
-                    }),
-                  }}
-                >
-                  {opt}
-                </Button>
-              ))}
-            </Box>
-            {selected && (
-              <Button
-                variant="contained"
-                color="primary"
-                sx={{ mt: 3 }}
-                onClick={handleNext}
-              >
-                下一題
-              </Button>
-            )}
-          </Box>
-        )}
-
-        {/* 遊戲結束：顯示最終分數與再玩一輪 */}
-        {isGameOver && !question && (
-          <Box sx={{ textAlign: "center", py: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              遊戲結束！最終分數：{score}
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={resetGame}
-              sx={{ py: 1.5, px: 4 }}
-            >
-              再玩一輪
-            </Button>
-          </Box>
-        )}
-      </Stack>
-    </Box>
+      )}
+    </GameShell>
   );
 };
